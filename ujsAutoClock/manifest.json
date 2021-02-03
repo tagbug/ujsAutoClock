@@ -1,0 +1,46 @@
+{
+	"manifest_version": 2,
+	"name": "ujs自动健康打卡",
+	"version": "1.0.0",
+	"description": "自动打卡器",
+	"icons":
+	{
+		"16": "img/icon.png",
+		"48": "img/icon.png",
+		"128": "img/icon.png"
+	},
+	"background":
+	{
+		"scripts": ["js/jQuery.min.js", "js/encrypt.js", "js/background.js"]
+	},
+	"browser_action": 
+	{
+		"default_icon": "img/icon.png",
+		"default_title": "ujs自动健康打卡",
+		"default_popup": "popup.html"
+	},
+	"content_scripts": 
+	[
+		{
+			"matches": ["http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb*"],
+			"js": ["js/daka.js"],
+			"run_at": "document_end"
+		}
+	],
+	"permissions":
+	[
+		"notifications", 
+		"webRequest", 
+		"webRequestBlocking",
+		"storage", 
+		"http://*/*", 
+		"https://*/*" 
+	],
+	"homepage_url": "https://tagbug.gitlab.io",
+	"options_page": "options.html",
+	"options_ui":
+	{
+		"page": "options.html",
+		"chrome_style": true
+	}
+}
