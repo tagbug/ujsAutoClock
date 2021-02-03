@@ -15,7 +15,7 @@ var autotimer;
 function createTimer () {
     var time = settings.autotime.split(':');
     var d = new Date();
-    d.setHours(time[0], time[1]);
+    d.setHours(time[0], time[1], 0, 0);
     var interval = d - new Date();
     interval = interval < 0 ? 24 * 60 * 60 * 1000 - interval : interval;
     timer = window.setTimeout(function () {
@@ -80,19 +80,25 @@ function autodaka () {
     ];
     xmlhttp.onreadystatechange = function () {
         if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-            //读取表单提交项
-            for (var i = 0; i < postForm.length; i++) {
-                var searchStr = "name=\"" + postForm[i].name + "\" value=\"";
+            //是否已登录
+            if (xmlhttp.response.indexOf("<i class=\"nav_icon nav_icon_logout\"></i><span>安全退出</span>") != -1) {
+                //已登录，直接打卡
+                daka();
+            } else {
+                //读取表单提交项
+                for (var i = 0; i < postForm.length; i++) {
+                    var searchStr = "name=\"" + postForm[i].name + "\" value=\"";
+                    var start = xmlhttp.response.indexOf(searchStr);
+                    var end = xmlhttp.response.indexOf("\"", start + searchStr.length);
+                    postForm[i].value = xmlhttp.response.substring(start + searchStr.length, end);
+                }
+                var searchStr = "id=\"pwdDefaultEncryptSalt\" value=\"";
                 var start = xmlhttp.response.indexOf(searchStr);
                 var end = xmlhttp.response.indexOf("\"", start + searchStr.length);
-                postForm[i].value = xmlhttp.response.substring(start + searchStr.length, end);
+                _pwdDefaultEncryptSalt = xmlhttp.response.substring(start + searchStr.length, end);
+                xmlhttp2.open('GET', 'https://pass.ujs.edu.cn/cas/needCaptcha.html?username=' + username + '&pwdEncrypt2=pwdEncryptSalt&_=' + parseInt(Math.random() * Math.pow(10, 13)));
+                xmlhttp2.send();
             }
-            var searchStr = "id=\"pwdDefaultEncryptSalt\" value=\"";
-            var start = xmlhttp.response.indexOf(searchStr);
-            var end = xmlhttp.response.indexOf("\"", start + searchStr.length);
-            _pwdDefaultEncryptSalt = xmlhttp.response.substring(start + searchStr.length, end);
-            xmlhttp2.open('GET', 'https://pass.ujs.edu.cn/cas/needCaptcha.html?username=' + username + '&pwdEncrypt2=pwdEncryptSalt&_=' + parseInt(Math.random() * Math.pow(10, 13)));
-            xmlhttp2.send();
         }
     }
     xmlhttp.open('GET', 'https://pass.ujs.edu.cn/cas/login', true);
@@ -269,6 +275,7 @@ function autodaka () {
         if (request.type == 'tips') {
             if (request.status == 'success') {
                 page.close();
+                console.log('自动打卡成功！最新打卡时间：' + request.data);
                 chrome.notifications.create(null, {
                     type: 'basic',
                     iconUrl: 'img/icon.png',
