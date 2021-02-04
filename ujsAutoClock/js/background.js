@@ -13,6 +13,8 @@ getSettings();
 var timer;
 var autotimer;
 function createTimer () {
+    window.clearInterval(autotimer);
+    window.clearTimeout(timer);
     var time = settings.autotime.split(':');
     var d = new Date();
     d.setHours(time[0], time[1], 0, 0);
@@ -28,8 +30,6 @@ function createTimer () {
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type == 'saved') {
         getSettings();
-        window.clearInterval(autotimer);
-        window.clearTimeout(timer);
         createTimer();
     }
 });
@@ -264,38 +264,39 @@ function autodaka () {
             }
         }
     }
-    var page;
     async function daka () {
         page = window.open(serviceURL);
         sleep(2000);
         page.location = 'http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000);
     };
-    var retryCount = 0;
-    chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-        if (request.type == 'tips') {
-            if (request.status == 'success') {
-                page.close();
-                console.log('自动打卡成功！最新打卡时间：' + request.data);
+    retryCount = 0;
+}
+var page;
+var retryCount = 0;
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+    if (request.type == 'tips') {
+        if (request.status == 'success') {
+            page.close();
+            console.log('自动打卡成功！最新打卡时间：' + request.data);
+            chrome.notifications.create(null, {
+                type: 'basic',
+                iconUrl: 'img/icon.png',
+                title: 'ujs自动健康打卡',
+                message: '自动打卡成功！最新打卡时间：' + request.data
+            });
+        } else {
+            page.close();
+            if (retryCount < 5) {
+                retryCount += 1;
+                daka();
+            } else {
                 chrome.notifications.create(null, {
                     type: 'basic',
                     iconUrl: 'img/icon.png',
                     title: 'ujs自动健康打卡',
-                    message: '自动打卡成功！最新打卡时间：' + request.data
+                    message: '自动打卡失败！（尝试次数过多）'
                 });
-            } else {
-                page.close();
-                if (retryCount < 5) {
-                    retryCount += 1;
-                    daka();
-                } else {
-                    chrome.notifications.create(null, {
-                        type: 'basic',
-                        iconUrl: 'img/icon.png',
-                        title: 'ujs自动健康打卡',
-                        message: '自动打卡失败！（尝试次数过多）'
-                    });
-                }
             }
         }
-    });
-}
+    }
+});
