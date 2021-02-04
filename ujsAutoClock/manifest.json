@@ -11,7 +11,7 @@
 	},
 	"background":
 	{
-		"scripts": ["js/jQuery.min.js", "js/encrypt.js", "js/background.js"]
+		"scripts": ["js/encrypt.js", "js/background.js"]
 	},
 	"browser_action": 
 	{

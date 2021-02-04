@@ -202,7 +202,7 @@ function autodaka () {
     }
     ocrYoudao.onreadystatechange = async function () {
         if (this.readyState == 4 && this.status == 200) {
-            await sleep(10000);
+            await sleep(5000);
             ocrGet.open('GET', 'https://web.baimiaoapp.com/api/ocr/image/youdao/status?jobStatusId=' + encodeURIComponent(JSON.parse(ocrYoudao.response).data.jobStatusId), true);
             ocrGet.setRequestHeader('x-auth-uuid', uuid);
             ocrGet.setRequestHeader('x-auth-token', token);
@@ -265,18 +265,28 @@ function autodaka () {
         }
     }
     async function daka () {
-        page = window.open(serviceURL);
-        sleep(2000);
-        page.location = 'http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000);
+        status = 0;
+        page = window.open('http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000));
+        checkTimer = window.setInterval(function () {
+            if (status == 0) {
+                page.location = 'http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000);
+            }
+        }, 2000);
     };
     retryCount = 0;
 }
+var checkTimer;
+var status = 0;
 var page;
 var retryCount = 0;
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type == 'tips') {
-        if (request.status == 'success') {
+        status = 1;
+        window.clearInterval(checkTimer);
+        if (page) {
             page.close();
+        }
+        if (request.status == 'success') {
             console.log('自动打卡成功！最新打卡时间：' + request.data);
             chrome.notifications.create(null, {
                 type: 'basic',
@@ -285,10 +295,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 message: '自动打卡成功！最新打卡时间：' + request.data
             });
         } else {
-            page.close();
             if (retryCount < 5) {
                 retryCount += 1;
-                daka();
+                autodaka();
             } else {
                 chrome.notifications.create(null, {
                     type: 'basic',
