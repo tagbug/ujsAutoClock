@@ -209,7 +209,7 @@ function autodaka () {
             ocrGet.send();
         }
     }
-    ocrGet.onreadystatechange = async function a () {
+    ocrGet.onreadystatechange = async function () {
         if (this.readyState == 4 && this.status == 200) {
             try {
                 captcha = JSON.parse(ocrGet.response).data.ydResp.Result.regions[0].lines[0].text.replace(/\u0020/g, '');
@@ -225,7 +225,10 @@ function autodaka () {
             } catch {
                 //等待5秒重试
                 await sleep(5000);
-                a();
+                ocrGet.open('GET', 'https://web.baimiaoapp.com/api/ocr/image/youdao/status?jobStatusId=' + encodeURIComponent(JSON.parse(ocrYoudao.response).data.jobStatusId), true);
+                ocrGet.setRequestHeader('x-auth-uuid', uuid);
+                ocrGet.setRequestHeader('x-auth-token', token);
+                ocrGet.send();
             }
         }
     }
@@ -251,14 +254,18 @@ function autodaka () {
                         type: 'basic',
                         iconUrl: 'img/icon.png',
                         title: 'ujs自动健康打卡',
-                        message: '自动打卡失败！（用户名或密码有误）'
+                        message: '自动打卡失败！（用户名或密码有误）',
+                        requireInteraction: true,
+                        priority: 2
                     });
                 } else {
                     chrome.notifications.create(null, {
                         type: 'basic',
                         iconUrl: 'img/icon.png',
                         title: 'ujs自动健康打卡',
-                        message: '自动打卡失败！（未知错误：' + errorText + '）'
+                        message: '自动打卡失败！（未知错误：' + errorText + '）',
+                        requireInteraction: true,
+                        priority: 2
                     });
                 }
             }
@@ -292,7 +299,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 type: 'basic',
                 iconUrl: 'img/icon.png',
                 title: 'ujs自动健康打卡',
-                message: '自动打卡成功！最新打卡时间：' + request.data
+                message: '自动打卡成功！最新打卡时间：' + request.data,
+                requireInteraction: true,
+                priority: 2
             });
         } else {
             if (retryCount < 5) {
@@ -303,7 +312,9 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     type: 'basic',
                     iconUrl: 'img/icon.png',
                     title: 'ujs自动健康打卡',
-                    message: '自动打卡失败！（尝试次数过多）'
+                    message: '自动打卡失败！（尝试次数过多）',
+                    requireInteraction: true,
+                    priority: 2
                 });
             }
         }
