@@ -10,16 +10,29 @@ function getSettings () {
     });
 }
 getSettings();
-var timer;
-var autotimer;
+var nextRunDate;
+var checker;
 function createTimer () {
-    window.clearInterval(autotimer);
-    window.clearTimeout(timer);
+    window.clearInterval(checker);
     var time = settings.autotime.split(':');
     var d = new Date();
     d.setHours(time[0], time[1], 0, 0);
     var interval = d - new Date();
     interval = interval < 0 ? 24 * 60 * 60 * 1000 - interval : interval;
+    nextRunDate = new Date() + interval;
+    checker = window.setInterval(function () {
+        if (new Date() - nextRunDate < 0) {
+            autodaka();
+            window.clearInterval(checker);
+            nextRunDate = new Date() + 24 * 60 * 60 * 1000;
+            checker = window.setInterval(function () {
+                if (new Date() - nextRunDate < 0) {
+                    nextRunDate = new Date() + 24 * 60 * 60 * 1000;
+                    autodaka();
+                }
+            }, 10000);
+        }
+    }, 10000);
     timer = window.setTimeout(function () {
         autodaka();
         autotimer = window.setInterval(function () {
