@@ -16,29 +16,25 @@ function createTimer () {
     window.clearInterval(checker);
     var time = settings.autotime.split(':');
     var d = new Date();
-    d.setHours(time[0], time[1], 0, 0);
-    var interval = d - new Date();
-    interval = interval < 0 ? 24 * 60 * 60 * 1000 - interval : interval;
-    nextRunDate = new Date() + interval;
+    nextRunDate = new Date();
+    d.setHours(time[0], time[1]);
+    if (d - nextRunDate < 0) {
+        nextRunDate.setDate(nextRunDate.getDate() + 1);
+    }
+    nextRunDate.setHours(time[0], time[1]);
     checker = window.setInterval(function () {
-        if (new Date() - nextRunDate < 0) {
+        if (nextRunDate - new Date() < 0) {
             autodaka();
             window.clearInterval(checker);
-            nextRunDate = new Date() + 24 * 60 * 60 * 1000;
+            nextRunDate.setDate(nextRunDate.getDate() + 1);
             checker = window.setInterval(function () {
-                if (new Date() - nextRunDate < 0) {
-                    nextRunDate = new Date() + 24 * 60 * 60 * 1000;
+                if (nextRunDate - new Date() < 0) {
+                    nextRunDate.setDate(nextRunDate.getDate() + 1);
                     autodaka();
                 }
             }, 10000);
         }
     }, 10000);
-    timer = window.setTimeout(function () {
-        autodaka();
-        autotimer = window.setInterval(function () {
-            autodaka();
-        }, 24 * 60 * 60 * 1000);
-    }, interval);
 }
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type == 'saved') {
