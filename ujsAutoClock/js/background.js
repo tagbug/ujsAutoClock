@@ -24,11 +24,13 @@ function createTimer () {
     nextRunDate.setHours(time[0], time[1]);
     checker = window.setInterval(function () {
         if (nextRunDate - new Date() < 0) {
+            statusCount = 0;
             autodaka();
             window.clearInterval(checker);
             nextRunDate.setDate(nextRunDate.getDate() + 1);
             checker = window.setInterval(function () {
                 if (nextRunDate - new Date() < 0) {
+                    statusCount = 0;
                     nextRunDate.setDate(nextRunDate.getDate() + 1);
                     autodaka();
                 }
@@ -48,7 +50,28 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         autodaka();
     }
 });
+var status;
+var statusChecker;
+var statusCount = 0;
 function autodaka () {
+    status = 0;
+    statusChecker = window.setTimeout(function () {
+        if (statusCount >= 10) {
+            status = 1;
+            chrome.notifications.create(null, {
+                type: 'basic',
+                iconUrl: 'img/icon.png',
+                title: 'ujs自动健康打卡',
+                message: '自动打卡失败！网络连接问题（尝试次数过多）',
+                requireInteraction: true,
+                priority: 2
+            });
+        }
+        if (status == 0) {
+            statusCount += 1;
+            autodaka();
+        }
+    }, 1000 * 30);
     //要登录的网址
     var serviceURL = 'http://yun.ujs.edu.cn/xxhgl/yqsb/index';
     //用户名、密码
@@ -281,10 +304,11 @@ function autodaka () {
         }
     }
     async function daka () {
-        status = 0;
+        status = 1;
+        status2 = 0;
         page = window.open('http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000));
         checkTimer = window.setInterval(function () {
-            if (status == 0) {
+            if (status2 == 0) {
                 page.location = 'http://yun.ujs.edu.cn/xxhgl/yqsb/grmrsb?v=' + parseInt(Math.random() * 10000);
             }
         }, 2000);
@@ -292,12 +316,12 @@ function autodaka () {
     retryCount = 0;
 }
 var checkTimer;
-var status = 0;
+var status2 = 0;
 var page;
 var retryCount = 0;
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type == 'tips') {
-        status = 1;
+        status2 = 1;
         window.clearInterval(checkTimer);
         if (page) {
             page.close();
