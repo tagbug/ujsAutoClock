@@ -40,6 +40,11 @@
 			"matches": ["https://qun.qq.com/homework/qunsolitaire/list.html*"],
 			"js": ["js/qqjielong.js"],
 			"run_at": "document_end"
+		},
+		{
+			"matches": ["https://qun.qq.com/homework/qunsolitaire/detail.html*"],
+			"js": ["js/qqjielong2.js"],
+			"run_at": "document_end"
 		}
 	],
 	"permissions":
