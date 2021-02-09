@@ -1,6 +1,6 @@
 var settings;
 function getSettings () {
-    chrome.storage.local.get({ inited: false, autotime: '', username: '', password: '' }, function (data) {
+    chrome.storage.local.get({ inited: false, autotime: '', username: '', password: '', QQusername: '', QQpassword: '', QQqun: '' }, function (data) {
         settings = data;
         if (settings.inited) {
             createTimer();
@@ -58,6 +58,10 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         autodaka();
     }
 });
+//js Sleep
+function sleep (time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+}
 var status;
 var statusChecker;
 var statusCount = 0;
@@ -85,10 +89,6 @@ function autodaka () {
     //用户名、密码
     var username = settings.username;
     var password = settings.password;
-    //js Sleep
-    function sleep (time) {
-        return new Promise((resolve) => setTimeout(resolve, time));
-    }
     //load from "https://pass.ujs.edu.cn/cas/login"
     var xmlhttp = new XMLHttpRequest();
     var captchaHttp = new XMLHttpRequest();
@@ -327,6 +327,11 @@ var checkTimer;
 var status2 = 0;
 var page;
 var retryCount = 0;
+var loginWindow;
+var jielongWindow;
+var jielongTimer;
+var jielongStatus;
+var jielongRetryCount;
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     if (request.type == 'tips') {
         status2 = 1;
@@ -344,6 +349,43 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                 requireInteraction: true,
                 priority: 2
             });
+            if (settings.QQusername != '' && settings.QQpassword != '' && settings.QQqun != '') {
+                jielongStatus = 0;
+                jielongRetryCount = 0;
+                jielongTimer = window.setInterval(function () {
+                    if (jielongStatus == 0) {
+                        try {
+                            loginWindow.close();
+                        } catch (e) { }
+                        try {
+                            jielongWindow.close();
+                        } catch (e) { }
+                        if (jielongRetryCount < 5) {
+                            jielongRetryCount += 1;
+                            loginWindow = window.open("https://i.qq.com/");
+                        } else {
+                            window.clearInterval(jielongTimer);
+                            chrome.notifications.create(null, {
+                                type: 'basic',
+                                iconUrl: 'img/icon.png',
+                                title: 'ujs自动健康打卡',
+                                message: '自动接龙失败！（自动重试次数过多）' ,
+                                requireInteraction: true,
+                                priority: 2
+                            });
+                        }
+                    } else {
+                        try {
+                            loginWindow.close();
+                        } catch (e) { }
+                        try {
+                            jielongWindow.close();
+                        } catch (e) { }
+                        window.clearInterval(jielongTimer);
+                    }
+                }, 1000 * 30);
+                loginWindow = window.open("https://i.qq.com/");
+            }
         } else {
             if (retryCount < 5) {
                 retryCount += 1;
@@ -358,6 +400,49 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
                     priority: 2
                 });
             }
+        }
+    }
+});
+chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
+    if (request.type == 'QQlogined') {
+        await sleep(2000);
+        loginWindow.close();
+        jielongWindow = window.open("https://qun.qq.com/homework/qunsolitaire/list.html?_wv=1031&gc=" + settings.QQqun + "&from=appstore_icon&from=qqminiprogram=" + settings.QQqun + "&state=1");
+    }
+});
+chrome.runtime.onMessage.addListener(async function (request, sender, sendResponse) {
+    if (request.type == 'QQjielonged') {
+        await sleep(1000);
+        jielongWindow.close();
+        if (request.status == "success") {
+            jielongStatus = 1;
+            chrome.notifications.create(null, {
+                type: 'basic',
+                iconUrl: 'img/icon.png',
+                title: 'ujs自动健康打卡',
+                message: '自动接龙成功！',
+                requireInteraction: true,
+                priority: 2
+            });
+        } else if (request.status == "failed") {
+            jielongStatus = 1;
+            chrome.notifications.create(null, {
+                type: 'basic',
+                iconUrl: 'img/icon.png',
+                title: 'ujs自动健康打卡',
+                message: '自动接龙失败，可能已接龙或者过期了？',
+                requireInteraction: true,
+                priority: 2
+            });
+        } else {
+            chrome.notifications.create(null, {
+                type: 'basic',
+                iconUrl: 'img/icon.png',
+                title: 'ujs自动健康打卡',
+                message: '自动接龙失败，网络波动',
+                requireInteraction: true,
+                priority: 2
+            });
         }
     }
 });
